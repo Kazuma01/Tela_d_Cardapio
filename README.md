@@ -1,8 +1,4 @@
-# Curso GRATUITO de Laravel 11.x
-
-- :movie_camera: [Acesse o Curso](https://academy.especializati.com.br/curso/laravel-11-completo-e-gratuito).
-
-
+# Laravel 12
 Links Úteis:
 
 - :tada: [Saiba Mais](https://linktr.ee/especializati)
@@ -70,4 +66,4 @@ php artisan key:generate
 
 
 Acesse o projeto
-[http://localhost:8989](http://localhost:8989)
+[http://localhost:8000](http://localhost:8000)
