@@ -3,12 +3,29 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CardapioController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\OrderController;
 
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/cardapio', [CardapioController::class, 'index'])->name('cardapio.index');
+
+Route::get('/salas/criar', [RoomController::class, 'create'])->name('rooms.create');
+Route::post('/salas', [RoomController::class, 'store'])->name('rooms.store');
+Route::get('/salas/entrar', [RoomController::class, 'joinList'])->name('rooms.join.list');
+Route::get('/salas/{room}/entrar', [RoomController::class, 'joinForm'])->name('rooms.join.form');
+Route::post('/salas/{room}/entrar', [RoomController::class, 'join'])->name('rooms.join');
+Route::get('/salas/{room}', [RoomController::class, 'show'])->name('rooms.show');
+
+Route::get('/salas/{room}/pedidos/criar', [OrderController::class, 'create'])->name('orders.create');
+Route::post('/salas/{room}/pedidos', [OrderController::class, 'store'])->name('orders.store');
+Route::get('/salas/{room}/pedidos/{order}/editar', [OrderController::class, 'edit'])->name('orders.edit');
+Route::put('/salas/{room}/pedidos/{order}', [OrderController::class, 'update'])->name('orders.update');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

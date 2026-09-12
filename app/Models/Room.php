@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Room extends Model
 {
-    protected $fillable = ['codigo', 'senha', 'criado_por', 'status'];
+    protected $fillable = ['nome', 'codigo', 'senha', 'criado_por', 'status'];
 
     protected $hidden = ['senha'];
 
@@ -28,5 +28,12 @@ class Room extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+    public function isGarcom(int $userId): bool
+    {
+    return $this->participantes()
+        ->where('user_id', $userId)
+        ->wherePivot('papel', 'garcom')
+        ->exists();
     }
 }
