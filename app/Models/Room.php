@@ -36,4 +36,14 @@ class Room extends Model
         ->wherePivot('papel', 'garcom')
         ->exists();
     }
+    public function isParticipante(int $userId): bool
+    {
+        return $this->participantes()->where('user_id', $userId)->exists();
+        }
+        public function papelDe(int $userId): ?string
+        {
+            $participante = $this->participantes()->where('user_id', $userId)->first();
+            
+            return $participante?->pivot->papel;
+            }
 }

@@ -20,6 +20,10 @@
                     class="bg-gray-900 text-white rounded-md px-4 py-2 hover:bg-gray-700">
                     + Novo Pedido
                 </a>
+                <a href="{{ route('cozinha.index', $room) }}"
+                    class="text-sm text-blue-600 hover:underline">
+                    Ver cozinha
+                </a>
             </div>
 
             <div class="bg-white shadow-sm sm:rounded-lg p-6">

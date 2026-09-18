@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CardapioController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\KitchenController;
 
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 
@@ -21,6 +22,9 @@ Route::get('/salas/entrar', [RoomController::class, 'joinList'])->name('rooms.jo
 Route::get('/salas/{room}/entrar', [RoomController::class, 'joinForm'])->name('rooms.join.form');
 Route::post('/salas/{room}/entrar', [RoomController::class, 'join'])->name('rooms.join');
 Route::get('/salas/{room}', [RoomController::class, 'show'])->name('rooms.show');
+
+Route::get('/salas/{room}/cozinha', [KitchenController::class, 'index'])->name('cozinha.index');
+Route::post('/salas/{room}/pedidos/{order}/pronto', [KitchenController::class, 'markReady'])->name('cozinha.pronto');
 
 Route::get('/salas/{room}/pedidos/criar', [OrderController::class, 'create'])->name('orders.create');
 Route::post('/salas/{room}/pedidos', [OrderController::class, 'store'])->name('orders.store');

@@ -40,13 +40,17 @@ class RoomController extends Controller
     }
 
     public function show(Room $room): View
-    {
-        $room->load(['orders' => function ($query) {
-            $query->with('items.product')->latest();
-        }]);
-
-        return view('rooms.show', compact('room'));
+{
+    if ($room->papelDe(Auth::id()) === 'cozinha') {
+        return redirect()->route('cozinha.index', $room);
     }
+
+    $room->load(['orders' => function ($query) {
+        $query->with('items.product')->latest();
+    }]);
+
+    return view('rooms.show', compact('room'));
+}
 
     public function joinList(): View
     {
@@ -60,28 +64,34 @@ class RoomController extends Controller
         abort_if($room->status !== 'aberta', 404);
 
         return view('rooms.join', compact('room'));
+    } 
+
+   public function join(Request $request, Room $room): RedirectResponse 
+    {
+    abort_if($room->status !== 'aberta', 404);
+
+    $request->validate([
+        'senha' => ['required', 'string'],
+        'papel' => ['required', 'in:garcom,cozinha'],
+    ]);
+
+    if (! Hash::check($request->senha, $room->senha)) {
+        return back()->withErrors(['senha' => 'Senha incorreta.']);
     }
 
-    public function join(Request $request, Room $room): RedirectResponse
-    {
-        abort_if($room->status !== 'aberta', 404);
+    $room->participantes()->syncWithoutDetaching([
+        Auth::id() => ['papel' => $request->papel],
+    ]);
 
-        $request->validate([
-            'senha' => ['required', 'string'],
-            'papel' => ['required', 'in:garcom,cozinha'],
-        ]);
-
-        if (! Hash::check($request->senha, $room->senha)) {
-            return back()->withErrors(['senha' => 'Senha incorreta.']);
-        }
-
-        $room->participantes()->syncWithoutDetaching([
-            Auth::id() => ['papel' => $request->papel],
-        ]);
-
+    if ($request->papel === 'cozinha') {
         return redirect()
-            ->route('rooms.show', $room)
-            ->with('status', "Você entrou na sala como {$request->papel}.");
+            ->route('cozinha.index', $room)
+            ->with('status', 'Você entrou na sala como cozinha.');
+    }
+
+    return redirect()
+        ->route('rooms.show', $room)
+        ->with('status', 'Você entrou na sala como garçom.');
     }
 
     private function gerarCodigoUnico(): string

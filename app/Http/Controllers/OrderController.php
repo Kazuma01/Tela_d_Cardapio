@@ -117,5 +117,22 @@ class OrderController extends Controller
         return redirect()
             ->route('rooms.show', $room)
             ->with('status', 'Pedido atualizado com sucesso!');
+
+        $data = $request->validate([
+            'identificacao' => ['nullable', 'string', 'max:100'],
+            'observacao' => ['nullable', 'string', 'max:500'],
+            'status' => ['nullable', 'in:pendente,em_preparo,pronto,entregue'],
+            'itens' => ['required', 'array'],
+            'itens.*.quantidade' => ['nullable', 'integer', 'min:0'],
+            'itens.*.observacao' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        // ...
+
+        $order->update([
+            'identificacao' => $data['identificacao'] ?? null,
+            'observacao' => $data['observacao'] ?? null,
+            'status' => $data['status'] ?? $order->status,
+        ]);
     }
 }
