@@ -17,7 +17,7 @@ class KitchenController extends Controller
     $papel = $room->papelDe(Auth::id());
 
     $orders = $room->orders()
-        ->where('status', 'pendente')
+    ->whereIn('status', ['pendente', 'em_preparo'])
         ->with('items.product')
         ->oldest()
         ->paginate(3);

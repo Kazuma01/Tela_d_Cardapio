@@ -26,6 +26,8 @@ Route::get('/salas/{room}', [RoomController::class, 'show'])->name('rooms.show')
 Route::get('/salas/{room}/cozinha', [KitchenController::class, 'index'])->name('cozinha.index');
 Route::post('/salas/{room}/pedidos/{order}/pronto', [KitchenController::class, 'markReady'])->name('cozinha.pronto');
 
+Route::delete('/salas/{room}/pedidos/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+Route::patch('/salas/{room}/pedidos/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
 Route::get('/salas/{room}/pedidos/criar', [OrderController::class, 'create'])->name('orders.create');
 Route::post('/salas/{room}/pedidos', [OrderController::class, 'store'])->name('orders.store');
 Route::get('/salas/{room}/pedidos/{order}/editar', [OrderController::class, 'edit'])->name('orders.edit');

@@ -1,16 +1,4 @@
 @csrf
-@isset($order)
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-        <select name="status" class="w-full rounded-md border-gray-300 shadow-sm">
-            @foreach (['pendente', 'em_preparo', 'pronto', 'entregue'] as $status)
-                <option value="{{ $status }}" @selected($order->status === $status)>
-                    {{ ucfirst(str_replace('_', ' ', $status)) }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-@endisset
 <div class="mb-4">
     <label class="block text-sm font-medium text-gray-700 mb-1">Identificação (mesa, nome, etc.)</label>
     <input type="text" name="identificacao" value="{{ old('identificacao', $order->identificacao ?? '') }}"

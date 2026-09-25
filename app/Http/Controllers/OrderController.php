@@ -59,6 +59,7 @@ class OrderController extends Controller
                 'observacao' => $item['observacao'] ?? null,
             ]);
         }
+        event(new \App\Events\OrderCreated($order));
 
         return redirect()
             ->route('rooms.show', $room)
@@ -118,21 +119,29 @@ class OrderController extends Controller
             ->route('rooms.show', $room)
             ->with('status', 'Pedido atualizado com sucesso!');
 
-        $data = $request->validate([
-            'identificacao' => ['nullable', 'string', 'max:100'],
-            'observacao' => ['nullable', 'string', 'max:500'],
-            'status' => ['nullable', 'in:pendente,em_preparo,pronto,entregue'],
-            'itens' => ['required', 'array'],
-            'itens.*.quantidade' => ['nullable', 'integer', 'min:0'],
-            'itens.*.observacao' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        // ...
-
-        $order->update([
-            'identificacao' => $data['identificacao'] ?? null,
-            'observacao' => $data['observacao'] ?? null,
-            'status' => $data['status'] ?? $order->status,
-        ]);
     }
+    
+    public function updateStatus(Request $request, Room $room, Order $order): RedirectResponse
+    {
+        abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode alterar o status.');
+        
+        $data = $request->validate([
+            'status' => ['required', 'in:pendente,em_preparo,pronto,entregue'],
+            ]);
+            
+            $order->update(['status' => $data['status']]);
+            
+            return redirect()->route('rooms.show', $room)->with('status', 'Status atualizado.');
+    }
+    public function destroy(Room $room, Order $order): RedirectResponse
+    {
+        abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode excluir pedidos.');
+        
+        $order->delete();
+        
+        return redirect()
+        ->route('rooms.show', $room)
+        ->with('status', 'Pedido excluído.');
+    }
+
 }

@@ -1,4 +1,4 @@
-version: "1"
+version: "2.4 Beta"
 
 services:
     # image project
@@ -10,6 +10,24 @@ services:
         working_dir: /var/www/
         volumes:
             - ./:/var/www
+        depends_on:
+            - redis
+        networks:
+            - laravel
+
+    
+    # reverb (websocket)
+    reverb:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+        command: php artisan reverb:start --host=0.0.0.0 --port=8081 --debug
+        ports:
+            - "8081:8081"
         depends_on:
             - redis
         networks:
