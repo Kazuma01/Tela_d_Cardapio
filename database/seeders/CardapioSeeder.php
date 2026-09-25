@@ -21,7 +21,7 @@ class CardapioSeeder extends Seeder
         ];
 
         foreach ($produtos as $produto) {
-            Product::firstOrCreate(
+            Product::updateOrCreate(
                 ['nome' => $produto['nome'], 'category_id' => $categoria->id],
                 ['preco' => $produto['preco'], 'disponivel' => true]
             );
