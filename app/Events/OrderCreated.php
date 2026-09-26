@@ -29,6 +29,11 @@ class OrderCreated implements ShouldBroadcast
         ];
     }
 
+    public function broadcastAs(): string
+    {
+        return 'OrderCreated';
+    }
+
     public function broadcastWith(): array
     {
         return [
