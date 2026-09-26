@@ -122,17 +122,19 @@ class OrderController extends Controller
     }
     
     public function updateStatus(Request $request, Room $room, Order $order): RedirectResponse
-    {
-        abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode alterar o status.');
-        
-        $data = $request->validate([
-            'status' => ['required', 'in:pendente,em_preparo,pronto,entregue'],
-            ]);
-            
-            $order->update(['status' => $data['status']]);
-            
-            return redirect()->route('rooms.show', $room)->with('status', 'Status atualizado.');
-    }
+{
+    abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode alterar o status.');
+
+    $data = $request->validate([
+        'status' => ['required', 'in:pendente,em_preparo,pronto,entregue'],
+    ]);
+
+    $order->update(['status' => $data['status']]);
+
+    event(new \App\Events\OrderStatusUpdated($order));
+
+    return redirect()->route('rooms.show', $room)->with('status', 'Status atualizado.');
+}
     public function destroy(Room $room, Order $order): RedirectResponse
     {
         abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode excluir pedidos.');

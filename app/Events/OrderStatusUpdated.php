@@ -3,15 +3,13 @@
 namespace App\Events;
 
 use App\Models\Order;
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class OrderCreated implements ShouldBroadcastNow
+class OrderStatusUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,7 +17,7 @@ class OrderCreated implements ShouldBroadcastNow
 
     public function __construct(Order $order)
     {
-        $this->order = $order->load('items.product');
+        $this->order = $order;
     }
 
     public function broadcastOn(): array
@@ -31,7 +29,7 @@ class OrderCreated implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return 'OrderCreated';
+        return 'OrderStatusUpdated';
     }
 
     public function broadcastWith(): array
@@ -39,14 +37,7 @@ class OrderCreated implements ShouldBroadcastNow
         return [
             'order' => [
                 'id' => $this->order->id,
-                'identificacao' => $this->order->identificacao,
-                'observacao' => $this->order->observacao,
                 'status' => $this->order->status,
-                'items' => $this->order->items->map(fn ($item) => [
-                    'quantidade' => $item->quantidade,
-                    'observacao' => $item->observacao,
-                    'produto' => $item->product->nome,
-                ]),
             ],
         ];
     }

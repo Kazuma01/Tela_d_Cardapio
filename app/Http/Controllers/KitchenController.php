@@ -25,11 +25,13 @@ class KitchenController extends Controller
     return view('cozinha.index', compact('room', 'orders', 'papel'));
 }
     public function markReady(Room $room, Order $order): RedirectResponse
-    {
-        abort_unless($room->isParticipante(Auth::id()), 403, 'Você não faz parte desta sala.');
+{
+    abort_unless($room->isParticipante(Auth::id()), 403, 'Você não faz parte desta sala.');
 
-        $order->update(['status' => 'pronto']);
+    $order->update(['status' => 'pronto']);
 
-        return back()->with('status', 'Pedido marcado como pronto!');
-    }
+    event(new \App\Events\OrderStatusUpdated($order));
+
+    return back()->with('status', 'Pedido marcado como pronto!');
+}
 }
