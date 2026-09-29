@@ -29,8 +29,15 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="font-bold text-gray-900 mb-4">Pedidos</h3>
 
-                                @forelse ($room->orders as $order)
-                    <div class="border border-gray-400 rounded-lg p-6 mb-4 shadow-sm">
+                    @forelse ($room->orders as $order)
+                    @php
+                        $corCard = match($order->status) {
+                            'pronto' => 'border-blue-600 bg-blue-100',
+                            'entregue' => 'border-red-400 bg-red-50',
+                            default => 'border-gray-200 bg-white',
+                        };
+                    @endphp
+                    <div class="border {{ $corCard }} rounded-lg p-4 mb-3 shadow-sm">
                         <div class="flex justify-between items-start gap-3">
                             <div>
                                 <p class="font-semibold text-gray-900">
