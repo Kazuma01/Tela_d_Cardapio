@@ -24,7 +24,7 @@
                     @enderror
 
                     <button type="submit"
-                        class="w-full bg-gray-900 text-black border border-gray-300 rounded-md py-2 mt-2 hover:bg-gray-700">
+                        class="w-full bg-gray-900 text-white border border-gray-300 rounded-md py-2 mt-2 hover:bg-gray-700">
                         Criar sala
                     </button>
                 </form>
