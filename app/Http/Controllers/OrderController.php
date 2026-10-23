@@ -138,8 +138,10 @@ class OrderController extends Controller
     public function destroy(Room $room, Order $order): RedirectResponse
     {
         abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode excluir pedidos.');
-        
+        $orderId = $order->id;
         $order->delete();
+
+        event(new \App\Events\OrderDelented($orderId, $room->id));
         
         return redirect()
         ->route('rooms.show', $room)

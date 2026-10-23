@@ -112,7 +112,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             window.Echo.private('sala.{{ $room->id }}')
                 .listen('.OrderCreated', () => window.location.reload())
-                .listen('.OrderStatusUpdated', () => window.location.reload());
+                .listen('.OrderStatusUpdated', () => window.location.reload())
+                .listen('.OrderDelented', ()=> window.location.reload())
         });
     </script>
 </x-app-layout>
