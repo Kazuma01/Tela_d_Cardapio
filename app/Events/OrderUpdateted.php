@@ -16,4 +16,22 @@ class OrderUpdateted implements ShouldBroadcastnow
     public function __construct(
         public int $orderId,
     ) {}
+
+    public function broadcaston ():array{
+        retrun [
+             new privateChannel('.sala' . $this->roomid)
+        ];
+    }
+
+    public function broadcastAs ():string{
+        return "OrderUpdateted";
+    }
+    
+    public function broadcastWith():array{
+        return[
+            'orderId' => $this->orderId
+        ];
+    }
+    
+
 }
