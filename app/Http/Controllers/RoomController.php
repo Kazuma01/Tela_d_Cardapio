@@ -157,7 +157,11 @@ class RoomController extends Controller
 
         $pdf = Pdf::loadView('relatorios.vendas', compact('room', 'linhas', 'totalGeral', 'totalItens', 'totalPedidos'));
 
-        return $pdf->stream('relatorio-vendas-' . $room->codigo . '.pdf');
+        // Sempre gera um PDF novo com os dados atuais — navegador não pode servir versão em cache
+        return $pdf->stream('relatorio-vendas-' . $room->codigo . '.pdf')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
     }
 
     private function gerarCodigoUnico(): string

@@ -43,8 +43,9 @@
                     class="mt-1 w-full text-sm rounded-md border-gray-300 shadow-sm">
             </div>
             <input type="number" name="itens[{{ $produto->id }}][quantidade]" min="0"
-                value="{{ $itemExistente->quantidade ?? 0 }}"
-                class="w-full sm:w-20 rounded-md border-gray-300 shadow-sm text-center">
+                value="{{ $itemExistente->quantidade ?? '' }}"
+                placeholder="0"
+                class="w-full sm:w-20 rounded-md border-gray-300 shadow-sm text-center placeholder:text-gray-300">
         </div>
     @endforeach
 @endforeach

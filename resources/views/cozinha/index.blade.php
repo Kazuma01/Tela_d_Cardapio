@@ -1,14 +1,14 @@
-<x-app-layout>
+<x-kitchen-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Cozinha — {{ $room->nome }}</h2>
+            <h2 class="font-semibold text-xl text-white leading-tight">🍳 Cozinha — {{ $room->nome }}</h2>
 
             @if ($papel === 'garcom')
-                <a href="{{ route('rooms.show', $room) }}" class="text-sm text-blue-600 hover:underline">
+                <a href="{{ route('rooms.show', $room) }}" class="text-sm text-blue-400 hover:underline">
                     ← Voltar ao painel da sala
                 </a>
             @else
-                <a href="{{ route('rooms.join.list') }}" class="text-sm text-blue-600 hover:underline">
+                <a href="{{ route('rooms.join.list') }}" class="text-sm text-blue-400 hover:underline">
                     ← Sair (voltar para lista de salas)
                 </a>
             @endif
@@ -83,7 +83,7 @@
                         @csrf
                     </form>
                 @empty
-                    <p class="text-2xl text-gray-500 col-span-3 text-center py-12">Nenhum pedido pendente 🎉</p>
+                    <p class="text-2xl text-gray-400 col-span-3 text-center py-12">Nenhum pedido pendente 🎉</p>
                 @endforelse
             </div>
         </div>
@@ -140,4 +140,4 @@
                 .listen('.OrderDeleted', ()=> window.location.reload())
         });
     </script>
-</x-app-layout>
+</x-kitchen-layout>

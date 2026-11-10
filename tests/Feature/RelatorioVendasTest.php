@@ -22,6 +22,10 @@ test('relatório de vendas gera um PDF', function () {
 
     $response->assertOk();
     $response->assertHeader('content-type', 'application/pdf');
+    // O PDF nunca pode ser servido do cache do navegador — sempre dados atuais
+    // (o Symfony pode reordenar as diretivas e adicionar "private", então validamos por conteúdo)
+    $cache = $response->headers->get('Cache-Control') ?? '';
+    expect($cache)->toContain('no-store')->toContain('no-cache')->toContain('must-revalidate');
 });
 
 test('quem não é garçom da sala não vê o relatório', function () {
