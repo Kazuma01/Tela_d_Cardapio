@@ -22,9 +22,14 @@ Route::get('/salas/entrar', [RoomController::class, 'joinList'])->name('rooms.jo
 Route::get('/salas/{room}/entrar', [RoomController::class, 'joinForm'])->name('rooms.join.form');
 Route::post('/salas/{room}/entrar', [RoomController::class, 'join'])->name('rooms.join');
 Route::get('/salas/{room}', [RoomController::class, 'show'])->name('rooms.show');
+Route::get('/salas/{room}/encerrar', [RoomController::class, 'encerrarForm'])->name('rooms.encerrar.form');
+Route::patch('/salas/{room}/encerrar', [RoomController::class, 'encerrar'])->name('rooms.encerrar');
 
 Route::get('/salas/{room}/cozinha', [KitchenController::class, 'index'])->name('cozinha.index');
 Route::post('/salas/{room}/pedidos/{order}/pronto', [KitchenController::class, 'markReady'])->name('cozinha.pronto');
+
+Route::patch('/salas/{room}/estoque-pao', [RoomController::class, 'atualizarEstoque'])->name('rooms.estoque');
+Route::get('/salas/{room}/relatorio-vendas', [RoomController::class, 'relatorioVendas'])->name('rooms.relatorio');
 
 Route::delete('/salas/{room}/pedidos/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
 Route::patch('/salas/{room}/pedidos/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');

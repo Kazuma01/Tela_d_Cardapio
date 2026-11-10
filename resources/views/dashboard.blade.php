@@ -33,9 +33,12 @@
                 <ul class="text-sm text-gray-600 space-y-1">
                     <li>✅ Cardápio (categorias e produtos)</li>
                     <li>✅ Criar e entrar em sala (código + senha + papel)</li>
-                    <li>✅ Criar e editar pedido</li>
-                    <li>⏳ Tela dedicada da cozinha (cards de 5 em 5)</li>
-                    <li>⏳ Tempo real (Reverb + Echo)</li>
+                    <li>✅ Criar, editar e excluir pedido</li>
+                    <li>✅ Tela dedicada da cozinha (cards de 3 em 3, com som de aviso)</li>
+                    <li>✅ Tempo real (Reverb + Echo)</li>
+                    <li>✅ Encerrar sala</li>
+                    <li>✅ Estoque de pão e relatório de vendas</li>
+                    <li>⏳ Validação em uso real</li>
                 </ul>
             </div>
 

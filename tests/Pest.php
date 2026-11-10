@@ -1,6 +1,12 @@
 <?php
 
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Room;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -47,4 +53,33 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+function criarSalaComGarcom(): array
+{
+    $garcom = User::factory()->create();
+
+    $room = Room::create([
+        'nome' => 'Sala Teste',
+        'codigo' => strtoupper(Str::random(5)),
+        'senha' => Hash::make('senha123'),
+        'criado_por' => $garcom->id,
+        'status' => 'aberta',
+    ]);
+
+    $room->participantes()->attach($garcom->id, ['papel' => 'garcom']);
+
+    return [$garcom, $room];
+}
+
+function criarProduto(string $nome, float $preco = 10.0, bool $disponivel = true): Product
+{
+    $categoria = Category::firstOrCreate(['nome' => 'Lanches']);
+
+    return Product::create([
+        'category_id' => $categoria->id,
+        'nome' => $nome,
+        'preco' => $preco,
+        'disponivel' => $disponivel,
+    ]);
 }

@@ -1,4 +1,16 @@
 @csrf
+@if (isset($estoque))
+    <div class="mb-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 w-fit">
+        <span class="text-lg leading-none">🥖</span>
+        <span class="text-sm {{ $estoque > 0 ? 'text-amber-900' : 'text-red-700 font-bold' }}">
+            @if ($estoque > 0)
+                {{ $estoque }} {{ $estoque === 1 ? 'pão disponível' : 'pães disponíveis' }}
+            @else
+                Estoque de pão esgotado — reponha no painel da sala
+            @endif
+        </span>
+    </div>
+@endif
 <div class="mb-4">
     <label class="block text-sm font-medium text-gray-700 mb-1">Identificação (mesa, nome, etc.)</label>
     <input type="text" name="identificacao" value="{{ old('identificacao', $order->identificacao ?? '') }}"
@@ -21,7 +33,7 @@
         @php
             $itemExistente = isset($order) ? $order->items->firstWhere('product_id', $produto->id) : null;
         @endphp
-        <div class="flex items-center justify-between border-b border-gray-100 py-3 gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 py-3 gap-3">
             <div class="flex-1">
                 <p class="text-gray-800">{{ $produto->nome }}</p>
                 <p class="text-sm text-gray-500">R$ {{ number_format($produto->preco, 2, ',', '.') }}</p>
@@ -32,7 +44,7 @@
             </div>
             <input type="number" name="itens[{{ $produto->id }}][quantidade]" min="0"
                 value="{{ $itemExistente->quantidade ?? 0 }}"
-                class="w-20 rounded-md border-gray-300 shadow-sm text-center">
+                class="w-full sm:w-20 rounded-md border-gray-300 shadow-sm text-center">
         </div>
     @endforeach
 @endforeach

@@ -7,7 +7,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 
-class OrderDelented implements ShouldBroadcastNow
+class OrderDeleted implements ShouldBroadcastNow
 {
    use Dispatchable, InteractsWithSockets;
 
@@ -25,7 +25,7 @@ class OrderDelented implements ShouldBroadcastNow
 
    public function broadcastAs(): string
    {
-    return 'OrderDelented';
+    return 'OrderDeleted';
    }
 
    public function broadcastWith(): array

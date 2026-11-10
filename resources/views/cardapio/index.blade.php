@@ -8,14 +8,14 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-8">
             @foreach ($categorias as $categoria)
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 sm:p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">{{ $categoria->nome }}</h3>
 
-                    <div class="grid gap-3">
+                    <div class="grid gap-3 sm:grid-cols-2 sm:gap-x-6">
                         @foreach ($categoria->products as $produto)
-                            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                            <div class="flex justify-between items-center gap-3 border-b border-gray-100 pb-3">
                                 <span class="text-gray-800">{{ $produto->nome }}</span>
-                                <span class="font-semibold text-gray-900">
+                                <span class="font-semibold text-gray-900 shrink-0 whitespace-nowrap">
                                     R$ {{ number_format($produto->preco, 2, ',', '.') }}
                                 </span>
                             </div>

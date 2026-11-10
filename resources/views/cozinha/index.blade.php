@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Cozinha — {{ $room->nome }}</h2>
 
             @if ($papel === 'garcom')
@@ -90,8 +90,8 @@
     </div>
 
     <!-- Barra fixa de instruções -->
-    <div class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white py-4 shadow-lg">
-        <div class="max-w-6xl mx-auto px-6 flex items-center justify-between text-lg font-medium">
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white py-3 sm:py-4 shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-center sm:justify-between gap-x-6 gap-y-1 text-sm sm:text-lg font-medium">
             <span>
                 Aperte <span class="bg-white text-gray-900 rounded px-2 mx-1">1</span>
                 <span class="bg-white text-gray-900 rounded px-2 mx-1">2</span>
@@ -109,11 +109,35 @@
         </div>
     </div>
             <script>
+        // Som de aviso: 3 bips ao chegar pedido novo ou alterado (Web Audio API, sem arquivo externo)
+        function tocarAviso() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+
+                [0, 0.25, 0.5].forEach((delayo) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = 880;
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime + delayo);
+                    gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + delayo + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delayo + 0.22);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(ctx.currentTime + delayo);
+                    osc.stop(ctx.currentTime + delayo + 0.25);
+                });
+            } catch (e) {
+                // navegador bloqueou áudio sem interação — ignora silenciosamente
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             window.Echo.private('sala.{{ $room->id }}')
-                .listen('.OrderCreated', () => window.location.reload())
+                .listen('.OrderCreated', () => { tocarAviso(); setTimeout(() => window.location.reload(), 600); })
+                .listen('.OrderUpdated', () => { tocarAviso(); setTimeout(() => window.location.reload(), 600); })
                 .listen('.OrderStatusUpdated', () => window.location.reload())
-                .listen('.OrderDelented', ()=> window.location.reload())
+                .listen('.OrderDeleted', ()=> window.location.reload())
         });
     </script>
 </x-app-layout>
