@@ -77,13 +77,13 @@
 
                         <a href="{{ route('cozinha.index', $room) }}"
                             class="bg-gray-100 text-gray-800 rounded-md px-4 py-2 text-sm font-medium hover:bg-gray-200">
-                            👨‍🍳 Ver cozinha
+                             Ver cozinha
                         </a>
                     @endif
 
                     <a href="{{ route('rooms.relatorio', $room) }}?{{ now()->format('U') }}" target="_blank"
                         class="bg-gray-100 text-gray-800 rounded-md px-4 py-2 text-sm font-medium hover:bg-gray-200">
-                        📊 Relatório (PDF)
+                         Relatório (PDF)
                     </a>
 
                     @if ($room->criado_por === auth()->id() && $room->status === 'aberta')

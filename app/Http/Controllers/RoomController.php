@@ -43,9 +43,16 @@ class RoomController extends Controller
             ->with('status', 'Sala criada com sucesso!');
     }
 
-    public function show(Room $room): View
+    public function show(Room $room): View|RedirectResponse
 {
-    if ($room->papelDe(Auth::id()) === 'cozinha') {
+    $papel = $room->papelDe(Auth::id());
+
+    // Quem não participa da sala não pode ver pedidos/observações — vai para a tela de senha
+    if ($papel === null) {
+        return redirect()->route('rooms.join.form', $room);
+    }
+
+    if ($papel === 'cozinha') {
         return redirect()->route('cozinha.index', $room);
     }
 

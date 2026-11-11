@@ -95,6 +95,7 @@ class OrderController extends Controller
 
     public function edit(Room $room, Order $order): View
     {
+        $this->garantirPedidoDaSala($room, $order);
         abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode editar pedidos.');
         abort_if($room->status !== 'aberta', 403, 'A sala está encerrada e não aceita alterações em pedidos.');
 
@@ -111,6 +112,7 @@ class OrderController extends Controller
 
     public function update(Request $request, Room $room, Order $order): RedirectResponse
     {
+        $this->garantirPedidoDaSala($room, $order);
         abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode editar pedidos.');
         abort_if($room->status !== 'aberta', 403, 'A sala está encerrada e não aceita alterações em pedidos.');
 
@@ -178,6 +180,7 @@ class OrderController extends Controller
     
     public function updateStatus(Request $request, Room $room, Order $order): RedirectResponse
 {
+    $this->garantirPedidoDaSala($room, $order);
     abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode alterar o status.');
 
     $data = $request->validate([
@@ -192,6 +195,7 @@ class OrderController extends Controller
 }
     public function destroy(Room $room, Order $order): RedirectResponse
     {
+        $this->garantirPedidoDaSala($room, $order);
         abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode excluir pedidos.');
 
         // Devolve ao estoque os pães que este pedido estava consumindo
@@ -208,6 +212,15 @@ class OrderController extends Controller
         return redirect()
         ->route('rooms.show', $room)
         ->with('status', 'Pedido excluído.');
+    }
+
+    /**
+     * Impede IDOR: o pedido da URL precisa pertencer à sala da URL.
+     * Retorna 404 (e não 403) para não confirmar a existência do pedido.
+     */
+    private function garantirPedidoDaSala(Room $room, Order $order): void
+    {
+        abort_unless($order->room_id === $room->id, 404);
     }
 
 }

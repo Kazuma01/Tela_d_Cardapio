@@ -1,7 +1,7 @@
 <x-kitchen-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-semibold text-xl text-white leading-tight">🍳 Cozinha — {{ $room->nome }}</h2>
+            <h2 class="font-semibold text-xl text-white leading-tight"> Cozinha — {{ $room->nome }}</h2>
 
             @if ($papel === 'garcom')
                 <a href="{{ route('rooms.show', $room) }}" class="text-sm text-blue-400 hover:underline">

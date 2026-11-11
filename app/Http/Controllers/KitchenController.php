@@ -26,6 +26,7 @@ class KitchenController extends Controller
 }
     public function markReady(Room $room, Order $order): RedirectResponse
 {
+    abort_unless($order->room_id === $room->id, 404);
     abort_unless($room->isParticipante(Auth::id()), 403, 'Você não faz parte desta sala.');
 
     $order->update(['status' => 'pronto']);
