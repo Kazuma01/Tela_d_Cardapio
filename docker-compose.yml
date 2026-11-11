@@ -58,7 +58,8 @@ services:
         volumes:
             - ./.docker/mysql/dbdata:/var/lib/mysql
         ports:
-            - "3300:3306"
+            # Só acessível da própria máquina (antes ficava exposto na LAN)
+            - "127.0.0.1:3300:3306"
         networks:
             - laravel
 
@@ -67,7 +68,8 @@ services:
         image: phpmyadmin/phpmyadmin
         restart: unless-stopped
         ports:
-            - "8080:80"
+            # Só acessível da própria máquina (antes ficava exposto na LAN)
+            - "127.0.0.1:8080:80"
         environment:
             PMA_HOST: db
             PMA_PORT: 3306
