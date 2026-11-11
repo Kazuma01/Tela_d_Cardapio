@@ -25,7 +25,7 @@ class RoomController extends Controller
     {
         $request->validate([
             'nome' => ['required', 'string', 'max:100'],
-            'senha' => ['required', 'string', 'min:4'],
+            'senha' => ['required', 'string', 'min:6'],
         ]);
 
         $room = Room::create([

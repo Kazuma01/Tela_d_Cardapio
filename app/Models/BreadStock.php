@@ -16,9 +16,27 @@ class BreadStock extends Model
         return static::query()->firstOrCreate([], ['quantidade' => 100]);
     }
 
-    public function consumir(int $quantidade): void
+    /**
+     * Consome de forma atômica: o UPDATE só é aplicado se ainda houver
+     * quantidade suficiente no banco (WHERE quantidade >= N). Assim, dois
+     * pedidos simultâneos não conseguem estourar o estoque.
+     *
+     * Retorna false quando não há pão suficiente (nada é alterado).
+     */
+    public function consumirSeDisponivel(int $quantidade): bool
     {
-        $this->decrement('quantidade', $quantidade);
+        if ($quantidade <= 0) {
+            return true;
+        }
+
+        $linhasAfetadas = static::query()
+            ->whereKey($this->getKey())
+            ->where('quantidade', '>=', $quantidade)
+            ->decrement('quantidade', $quantidade);
+
+        $this->refresh();
+
+        return $linhasAfetadas > 0;
     }
 
     public function repor(int $quantidade): void

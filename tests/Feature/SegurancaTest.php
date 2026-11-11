@@ -130,3 +130,21 @@ test('participante continua vendo o painel e editando o próprio pedido', functi
 test('a rota pública /users não existe mais', function () {
     $this->get('/users')->assertNotFound();
 });
+
+test('criar sala exige senha com pelo menos 6 caracteres', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post('/salas', [
+        'nome' => 'Sala Senha Curta',
+        'senha' => '12345',
+    ])->assertSessionHasErrors('senha');
+
+    expect(Room::count())->toBe(0);
+
+    $this->actingAs($user)->post('/salas', [
+        'nome' => 'Sala Senha Ok',
+        'senha' => '123456',
+    ])->assertRedirect();
+
+    expect(Room::count())->toBe(1);
+});

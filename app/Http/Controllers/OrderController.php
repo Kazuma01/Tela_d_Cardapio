@@ -10,6 +10,7 @@ use App\Models\Room;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -53,38 +54,42 @@ class OrderController extends Controller
             return back()->withErrors(['itens' => 'Um dos produtos escolhidos não está mais disponível no cardápio.'])->withInput();
         }
 
-        // Contador de pão: cada unidade de lanche consome exatamente 1 pão
+        // Contador de pão: cada unidade de lanche consome exatamente 1 pão.
+        // A baixa é atômica e acontece na MESMA transação do pedido: ou grava
+        // pedido + baixa, ou não muda nada (evita corrida entre pedidos).
         $totalPaes = (int) $itensValidos->sum('quantidade');
         $estoque = BreadStock::atual();
 
-        if ($estoque->quantidade <= 0) {
-            return back()->withErrors(['itens' => 'Estoque de pão esgotado — reponha o contador antes de criar novos pedidos.'])->withInput();
-        }
+        $order = DB::transaction(function () use ($room, $data, $itensValidos, $produtos, $totalPaes, $estoque) {
+            if (! $estoque->consumirSeDisponivel($totalPaes)) {
+                return null;
+            }
 
-        if ($totalPaes > $estoque->quantidade) {
+            $order = Order::create([
+                'room_id' => $room->id,
+                'criado_por' => Auth::id(),
+                'identificacao' => $data['identificacao'] ?? null,
+                'observacao' => $data['observacao'] ?? null,
+                'status' => 'pendente',
+            ]);
+
+            foreach ($itensValidos as $productId => $item) {
+                $produto = $produtos->firstWhere('id', (int) $productId);
+
+                $order->items()->create([
+                    'product_id' => $produto->id,
+                    'quantidade' => $item['quantidade'],
+                    'preco_unitario' => $produto->preco,
+                    'observacao' => $item['observacao'] ?? null,
+                ]);
+            }
+
+            return $order;
+        });
+
+        if ($order === null) {
             return back()->withErrors(['itens' => "Não há pão suficiente: o pedido precisa de {$totalPaes} pães e o estoque tem apenas {$estoque->quantidade}. Ajuste as quantidades."])->withInput();
         }
-
-        $order = Order::create([
-            'room_id' => $room->id,
-            'criado_por' => Auth::id(),
-            'identificacao' => $data['identificacao'] ?? null,
-            'observacao' => $data['observacao'] ?? null,
-            'status' => 'pendente',
-        ]);
-
-        foreach ($itensValidos as $productId => $item) {
-            $produto = $produtos->firstWhere('id', (int) $productId);
-
-            $order->items()->create([
-                'product_id' => $produto->id,
-                'quantidade' => $item['quantidade'],
-                'preco_unitario' => $produto->preco,
-                'observacao' => $item['observacao'] ?? null,
-            ]);
-        }
-
-        $estoque->consumir($totalPaes);
 
         event(new \App\Events\OrderCreated($order));
 
@@ -136,41 +141,52 @@ class OrderController extends Controller
             return back()->withErrors(['itens' => 'Um dos produtos escolhidos não está mais disponível no cardápio.'])->withInput();
         }
 
-        // Contador de pão: ajusta o estoque pela diferença entre o pedido antigo e o novo
-        $totalAntigo = (int) $order->items()->sum('quantidade');
+        // Contador de pão: ajusta o estoque pela diferença entre o pedido antigo e o novo.
+        // A linha do pedido é travada (lockForUpdate) para dois garçons não ajustarem
+        // o mesmo pedido ao mesmo tempo, e a baixa é atômica (consumirSeDisponivel).
         $totalNovo = (int) $itensValidos->sum('quantidade');
-        $diferenca = $totalNovo - $totalAntigo;
         $estoque = BreadStock::atual();
 
-        if ($diferenca > 0 && $diferenca > $estoque->quantidade) {
-            return back()->withErrors(['itens' => "Não há pão suficiente: a alteração precisa de mais {$diferenca} pães e o estoque tem apenas {$estoque->quantidade}. Ajuste as quantidades."])->withInput();
-        }
+        $orderAtualizado = DB::transaction(function () use ($order, $data, $itensValidos, $produtos, $totalNovo, $estoque) {
+            $pedido = Order::query()->whereKey($order->getKey())->lockForUpdate()->firstOrFail();
 
-        $order->update([
-            'identificacao' => $data['identificacao'] ?? null,
-            'observacao' => $data['observacao'] ?? null,
-        ]);
+            $totalAntigo = (int) $pedido->items()->sum('quantidade');
+            $diferenca = $totalNovo - $totalAntigo;
 
-        $order->items()->delete();
+            if ($diferenca > 0 && ! $estoque->consumirSeDisponivel($diferenca)) {
+                return null;
+            }
 
-        foreach ($itensValidos as $productId => $item) {
-            $produto = $produtos->firstWhere('id', (int) $productId);
-
-            $order->items()->create([
-                'product_id' => $produto->id,
-                'quantidade' => $item['quantidade'],
-                'preco_unitario' => $produto->preco,
-                'observacao' => $item['observacao'] ?? null,
+            $pedido->update([
+                'identificacao' => $data['identificacao'] ?? null,
+                'observacao' => $data['observacao'] ?? null,
             ]);
+
+            $pedido->items()->delete();
+
+            foreach ($itensValidos as $productId => $item) {
+                $produto = $produtos->firstWhere('id', (int) $productId);
+
+                $pedido->items()->create([
+                    'product_id' => $produto->id,
+                    'quantidade' => $item['quantidade'],
+                    'preco_unitario' => $produto->preco,
+                    'observacao' => $item['observacao'] ?? null,
+                ]);
+            }
+
+            if ($diferenca < 0) {
+                $estoque->repor(abs($diferenca));
+            }
+
+            return $pedido;
+        });
+
+        if ($orderAtualizado === null) {
+            return back()->withErrors(['itens' => "Não há pão suficiente para essa alteração: o estoque tem apenas {$estoque->quantidade}. Ajuste as quantidades."])->withInput();
         }
 
-        if ($diferenca > 0) {
-            $estoque->consumir($diferenca);
-        } elseif ($diferenca < 0) {
-            $estoque->repor(abs($diferenca));
-        }
-
-        event(new \App\Events\OrderUpdated($order->fresh()));
+        event(new \App\Events\OrderUpdated($orderAtualizado->fresh()));
 
         return redirect()
             ->route('rooms.show', $room)
@@ -198,14 +214,18 @@ class OrderController extends Controller
         $this->garantirPedidoDaSala($room, $order);
         abort_unless($room->isGarcom(Auth::id()), 403, 'Apenas o garçom pode excluir pedidos.');
 
-        // Devolve ao estoque os pães que este pedido estava consumindo
+        // Devolve ao estoque os pães que este pedido estava consumindo.
+        // Delete + reposição na mesma transação: nada fica pela metade.
         $totalPaes = (int) $order->items()->sum('quantidade');
         $orderId = $order->id;
-        $order->delete();
 
-        if ($totalPaes > 0) {
-            BreadStock::atual()->repor($totalPaes);
-        }
+        DB::transaction(function () use ($order, $totalPaes) {
+            $order->delete();
+
+            if ($totalPaes > 0) {
+                BreadStock::atual()->repor($totalPaes);
+            }
+        });
 
         event(new \App\Events\OrderDeleted($orderId, $room->id));
 

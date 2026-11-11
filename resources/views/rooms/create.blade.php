@@ -17,8 +17,9 @@
                     @enderror
 
                     <label class="block text-sm font-medium text-gray-700 mb-1">Defina uma senha para a sala</label>
-                    <input type="password" name="senha" required minlength="4"
+                    <input type="password" name="senha" required minlength="6"
                         class="w-full rounded-md border-gray-300 shadow-sm mb-2">
+                    <p class="text-xs text-gray-500 mb-2">Mínimo de 6 caracteres.</p>
                     @error('senha')
                         <p class="text-sm text-red-600 mb-2">{{ $message }}</p>
                     @enderror
