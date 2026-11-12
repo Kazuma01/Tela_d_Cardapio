@@ -1,0 +1,13 @@
+[Unit]
+Description=Alias mDNS cardapio.local para o IP atual da LAN
+After=network-online.target avahi-daemon.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/Projetos/Tela_d_Cardapio/scripts/mdns-cardapio.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

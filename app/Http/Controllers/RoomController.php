@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BreadStock;
 use App\Models\Room;
+use App\Services\AuditLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,11 @@ class RoomController extends Controller
         ]);
 
         $room->participantes()->attach(Auth::id(), ['papel' => 'garcom']);
+
+        AuditLogger::log('room.created', 'Sala criada', [
+            'room_id' => $room->id,
+            'codigo' => $room->codigo,
+        ]);
 
         return redirect()
             ->route('rooms.show', $room)
@@ -83,6 +89,11 @@ class RoomController extends Controller
 
         $room->update(['status' => 'encerrada']);
 
+        AuditLogger::log('room.closed', 'Sala encerrada', [
+            'room_id' => $room->id,
+            'codigo' => $room->codigo,
+        ]);
+
         return redirect()
             ->route('rooms.join.list')
             ->with('status', 'Sala encerrada com sucesso!');
@@ -112,11 +123,21 @@ class RoomController extends Controller
     ]);
 
     if (! Hash::check($request->senha, $room->senha)) {
+        // Senha errada em sala pode ser força bruta: fica auditado.
+        AuditLogger::log('room.join_failed', 'Senha de sala incorreta', [
+            'room_id' => $room->id,
+        ]);
+
         return back()->withErrors(['senha' => 'Senha incorreta.']);
     }
 
     $room->participantes()->syncWithoutDetaching([
         Auth::id() => ['papel' => $request->papel],
+    ]);
+
+    AuditLogger::log('room.joined', 'Usuário entrou na sala', [
+        'room_id' => $room->id,
+        'papel' => $request->papel,
     ]);
 
     if ($request->papel === 'cozinha') {
@@ -138,7 +159,16 @@ class RoomController extends Controller
             'quantidade' => ['required', 'integer', 'min:0', 'max:100000'],
         ]);
 
-        BreadStock::atual()->definir($data['quantidade']);
+        $estoque = BreadStock::atual();
+        $quantidadeAnterior = $estoque->quantidade;
+
+        $estoque->definir($data['quantidade']);
+
+        AuditLogger::log('stock.updated', 'Estoque de pão ajustado', [
+            'room_id' => $room->id,
+            'de' => $quantidadeAnterior,
+            'para' => $data['quantidade'],
+        ]);
 
         return back()->with('status', 'Estoque de pão atualizado para ' . $data['quantidade'] . ' pães.');
     }

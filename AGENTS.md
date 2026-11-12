@@ -65,7 +65,7 @@ npm run build
 docker compose exec -T app ./vendor/bin/pint --test app/Http/Controllers/OrderController.php tests/Feature/SegurancaTest.php
 ```
 
-**Serviços:** app `http://localhost:8000` · phpMyAdmin `http://localhost:8080` · Reverb `8081` · MySQL `3300`.
+**Serviços:** app `https://cardapio.local` (ou `https://kazuarch.local` / `https://localhost`) · Caddy publica **somente** 80/443 · phpMyAdmin `http://127.0.0.1:8080` · MySQL `127.0.0.1:3300` · Reverb interno `reverb:8081` · `scheduler` roda `schedule:work`. Guia completo: `docs/HTTPS.md`.
 
 **Testes:** `phpunit.xml` usa `sqlite :memory:`, `CACHE_STORE=array`, `SESSION_DRIVER=array`, `BROADCAST_CONNECTION=log`. **Nunca** aponte os testes para o MySQL de desenvolvimento nem use `migrate:fresh` no banco de dev.
 
@@ -118,6 +118,12 @@ docker compose exec -T app ./vendor/bin/pint --test app/Http/Controllers/OrderCo
 - `throttle:10,1` em criar sala e entrar em sala (força bruta de senha).
 - `BreadStock::consumirSeDisponivel()`: baixa de pão **atômica** (`UPDATE ... WHERE quantidade >= N`) dentro de `DB::transaction`; nunca ler quantidade e decrementar em passos separados. `OrderController@update` usa `lockForUpdate` na linha do pedido.
 - Senha de sala: mínimo **6** caracteres. `POST /register` tem `throttle:6,1`.
+- **Caddy é a única porta pública** (80/443). `nginx`, `reverb`, `app`, `db` e `redis` não são publicados no host. Não recrie `ports:` para 8000/8081.
+- `bootstrap/app.php`: `trustProxies` restrito a `172.19.0.0/16` (rede Docker) e headers `X-Forwarded-*`. Sem isso o Laravel acha que a requisição é HTTP e o cookie `Secure` falha.
+- `config/reverb.php`: `allowed_origins` **nunca** volta para `['*']`. O padrão aceita os nomes mDNS e IPs privados.
+- Cookies: `SESSION_SECURE_COOKIE=true`, `SESSION_ENCRYPT=true`, `HttpOnly` e `SameSite=Lax` (config/session.php).
+- `audit_logs` + `App\Services\AuditLogger`: registra login/falha/lockout, 403, sala, estoque e pedidos; **nunca** grava senha/token/segredo. Retenção de 90 dias via `model:prune`.
+- `POST /logout-all` encerra todas as sessões do usuário e troca o `remember_token`. `AuthenticateSession` derruba outras sessões quando a senha muda.
 - Rota pública `/users` **não existe** (removida por vazar dados). Não recriar.
 - CSRF: todo formulário usa `@csrf` (o partial `orders/_form.blade.php` já contém).
 - Blade escapa saída com `{{ }}`. **Não use `{!! !!}` com dados de usuário.**
@@ -142,7 +148,9 @@ Estes itens **não** foram corrigidos. Se a tarefa tocar neles, **explique o ris
 
 - **RESOLVIDO (11/11/2026)** — `APP_ENV=production` e `APP_DEBUG=false` no `.env` (antes `local`/`true`). Não voltar a `APP_DEBUG=true` em ambiente alcançável pela rede. Para depurar localmente, use `APP_DEBUG=true` apenas temporariamente e nunca em produção.
 - **RESOLVIDO (11/11/2026)** — Symfony atualizado para **7.4.23** (`symfony/mime` 7.4.22); `composer audit` sem advisories. Ao adicionar/atualizar dependências, rode `composer audit` de novo.
-- **RESOLVIDO (11/11/2026)** — MySQL (`3300`) e phpMyAdmin (`8080`) agora escutam **somente em `127.0.0.1`**. nginx (`8000`) e Reverb (`8081`) continuam em `0.0.0.0` porque o tablet da cozinha precisa de LAN. Não reabra banco/admin em `0.0.0.0`.
+- **RESOLVIDO (11/11/2026)** — MySQL (`3300`) e phpMyAdmin (`8080`) escutam **somente em `127.0.0.1`**. nginx (`8000`) e Reverb (`8081`) **deixaram de ser publicados**: o acesso externo passa só pelo Caddy em 80/443. Não reabra banco/admin em `0.0.0.0`.
+- **RESOLVIDO (11/11/2026)** — HTTPS/WSS com **Caddy + CA local** (`tls internal`). HTTP redireciona com 308; cookies `Secure`/`HttpOnly`/`SameSite`; TLS 1.2/1.3; Reverb via WSS na 443. A chave privada da CA fica só no volume `caddy_data`; só o `root.crt` é distribuído. Guia: `docs/HTTPS.md`.
+- **RESOLVIDO (11/11/2026)** — Auditoria (`audit_logs`) e encerramento remoto de sessões (`/logout-all`, `AuthenticateSession`). Eventos suspeitos (falha de login, lockout, 403, senha de sala errada) ficam registrados sem dados sensíveis.
 - **RESOLVIDO (11/11/2026)** — Corrida no estoque de pão: `BreadStock::consumirSeDisponivel()` faz `UPDATE ... WHERE quantidade >= N` (atômico) dentro de `DB::transaction`, junto com a criação/edição do pedido; `lockForUpdate` protege a edição concorrente do mesmo pedido. Nunca volte a ler a quantidade e decrementar em passos separados.
 - **RESOLVIDO (11/11/2026)** — Senha de sala agora exige **mínimo de 6 caracteres** (`RoomController@store` + `rooms/create.blade.php`). O `POST /register` ganhou `throttle:6,1`. O cadastro continua aberto (decisão pendente: exigir aprovação ou convite).
 - **LOW** — Código morto: `Admin\UserController`, `UserController`, `CheckIfIsAdmin`, `StoreUserRequest::authorize()` retornando `true`.
@@ -187,6 +195,11 @@ Estes itens **não** foram corrigidos. Se a tarefa tocar neles, **explique o ris
 - **Alpine.js:** `@click.outside` deve ficar no **wrapper** (botão + pop-up), não só no botão.
 - **Breeze:** o menu superior assume usuário logado; qualquer view pública com `x-app-layout` precisa de guard `auth()->check()`.
 - **Nginx cacheia o IP do upstream:** ao recriar o container `app` (`docker compose up -d`, rebuild, etc.), o nginx continua apontando para o IP antigo e o site retorna **502**. Sempre rode `docker compose restart nginx` depois de recriar o `app`.
+- **Caddy com `admin off`:** `caddy reload` não funciona (a API administrativa está desligada). Depois de editar o `Caddyfile`, rode `docker compose restart caddy` (ou `up -d --force-recreate caddy`).
+- **CA local:** fica no volume `caddy_data`. **Nunca** apague esse volume sem querer: todos os dispositivos teriam que instalar a nova CA. A chave privada (`root.key`) nunca sai do volume; só o `root.crt` é exportado. Não versione certificados/chaves (`.gitignore` cobre).
+- **IP móvel:** o certificado cobre `cardapio.local`, `kazuarch.local`, `localhost`, `127.0.0.1` e o IP em `CARDAPIO_IP`. Se o IP mudar, use o nome mDNS; para o IP voltar a valer, atualize `CARDAPIO_IP` no `.env` e recrie o Caddy. O `default_sni` do Caddy existe porque navegador não envia SNI ao acessar por IP.
+- **mDNS:** `KazuArch.local` é o hostname da máquina (Avahi/systemd-resolved). `cardapio.local` é um alias publicado pelo serviço de usuário `cardapio-mdns.service` (`scripts/mdns-cardapio.sh`). Em dispositivo sem mDNS, use o IP.
+- **Docker x ufw:** portas publicadas pelo Docker podem ignorar regras do `ufw`. Não assuma que o firewall do host bloqueia tudo; confira de outro dispositivo. As portas internas não são publicadas, então o risco está só em 80/443.
 - **Imagem do container:** o `Dockerfile` usa `php:8.4-fpm`; a imagem atual roda PHP 8.4.26. Ao trocar de máquina ou após muito tempo, rode `docker compose build --no-cache app reverb` para não voltar a uma base defasada.
 - **`orders.criado_por`** é `NOT NULL`; rotas que criam pedido dependem de usuário autenticado.
 - **Arquivo `laravel`:** SQLite vazio na raiz, versionado. Os testes usam `:memory:`; não o use como banco de dev.
@@ -232,3 +245,42 @@ Estes itens **não** foram corrigidos. Se a tarefa tocar neles, **explique o ris
 - [ ] Atualizei o Word (se mudou comportamento).
 - [ ] Não fiz commit/push/deploy sem autorização.
 - [ ] Informei riscos e limitações.
+
+---
+
+## 13. HTTPS, auditoria e infraestrutura (V0.8.0)
+
+### Arquitetura
+- **Caddy** (`docker/caddy/Caddyfile`) é a única porta pública: 80 (redireciona 308) e 443 (HTTPS/WSS).
+- `/app/*` → `reverb:8081` (WebSocket); demais rotas → `nginx:80` → `app:9000`.
+- Certificado: `tls internal` (CA local). SANs: `cardapio.local`, `kazuarch.local`, `localhost`, `127.0.0.1` e `CARDAPIO_IP`.
+- `default_sni` = `CARDAPIO_IP` para acesso por IP sem SNI.
+- HTTP/3 desligado (`protocols h1 h2`), pois 443/udp não é publicada.
+- `scheduler` roda `php artisan schedule:work` (limpeza da auditoria).
+
+### Arquivos principais
+| Arquivo | Papel |
+|---|---|
+| `docker/caddy/Caddyfile` | TLS, proxy e headers de segurança |
+| `docker/nginx/laravel.conf` | `X-Forwarded-*` ao PHP; `client_max_body_size 10m` |
+| `bootstrap/app.php` | `trustProxies` (172.19.0.0/16), `AuthenticateSession`, 403 auditado |
+| `config/reverb.php` | `allowed_origins` restrito |
+| `config/audit.php` | retenção e chaves sensíveis |
+| `app/Services/AuditLogger.php` | gravação segura da auditoria |
+| `app/Models/AuditLog.php` | model + `MassPrunable` |
+| `scripts/mdns-cardapio.sh` | alias mDNS `cardapio.local` |
+| `docs/HTTPS.md` | guia operacional e instalação da CA |
+
+### Verificação mínima após mudanças de infra
+```bash
+docker compose up -d
+docker compose ps
+docker compose logs --tail=30 caddy
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" http://localhost/           # 308 -> https
+curl --cacert /home/kazuma/Downloads/cardapio-ca-raiz.crt https://localhost/ -o /dev/null -w "%{http_code}\n"  # 200
+curl -sI https://localhost/login | grep -i set-cookie                              # Secure; HttpOnly; samesite=lax
+docker compose exec -T app php artisan test
+```
+
+### Firewall
+As regras de `ufw` exigem `sudo` e **não** foram aplicadas pelo agente. Os comandos (80/443 apenas para `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) estão em `docs/HTTPS.md` §6. Não abra portas no roteador nem exponha a aplicação à internet.

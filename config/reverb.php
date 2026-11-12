@@ -82,7 +82,16 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
-                'allowed_origins' => ['*'],
+                // O Reverb compara apenas o HOST da origem (sem esquema/porta).
+                // O padrão aceita os nomes mDNS estáveis e qualquer IP privado
+                // (o servidor é móvel e muda de rede). Nunca use '*' aqui.
+                'allowed_origins' => env('REVERB_ALLOWED_ORIGINS')
+                    ? array_values(array_filter(array_map('trim', explode(',', env('REVERB_ALLOWED_ORIGINS')))))
+                    : array_merge(
+                        ['cardapio.local', 'kazuarch.local', 'localhost', '127.0.0.1'],
+                        ['10.*', '192.168.*'],
+                        array_map(fn (int $i) => "172.{$i}.*", range(16, 31)),
+                    ),
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),

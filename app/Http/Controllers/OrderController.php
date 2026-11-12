@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Room;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -90,6 +91,12 @@ class OrderController extends Controller
         if ($order === null) {
             return back()->withErrors(['itens' => "Não há pão suficiente: o pedido precisa de {$totalPaes} pães e o estoque tem apenas {$estoque->quantidade}. Ajuste as quantidades."])->withInput();
         }
+
+        AuditLogger::log('order.created', 'Pedido criado', [
+            'room_id' => $room->id,
+            'order_id' => $order->id,
+            'paes' => $totalPaes,
+        ]);
 
         event(new \App\Events\OrderCreated($order));
 
@@ -186,6 +193,12 @@ class OrderController extends Controller
             return back()->withErrors(['itens' => "Não há pão suficiente para essa alteração: o estoque tem apenas {$estoque->quantidade}. Ajuste as quantidades."])->withInput();
         }
 
+        AuditLogger::log('order.updated', 'Pedido editado', [
+            'room_id' => $room->id,
+            'order_id' => $orderAtualizado->id,
+            'paes' => $totalNovo,
+        ]);
+
         event(new \App\Events\OrderUpdated($orderAtualizado->fresh()));
 
         return redirect()
@@ -203,7 +216,16 @@ class OrderController extends Controller
         'status' => ['required', 'in:pendente,em_preparo,pronto,entregue'],
     ]);
 
+    $statusAnterior = $order->status;
+
     $order->update(['status' => $data['status']]);
+
+    AuditLogger::log('order.status_changed', 'Status do pedido alterado', [
+        'room_id' => $room->id,
+        'order_id' => $order->id,
+        'de' => $statusAnterior,
+        'para' => $data['status'],
+    ]);
 
     event(new \App\Events\OrderStatusUpdated($order));
 
@@ -226,6 +248,12 @@ class OrderController extends Controller
                 BreadStock::atual()->repor($totalPaes);
             }
         });
+
+        AuditLogger::log('order.deleted', 'Pedido excluído', [
+            'room_id' => $room->id,
+            'order_id' => $orderId,
+            'paes_devolvidos' => $totalPaes,
+        ]);
 
         event(new \App\Events\OrderDeleted($orderId, $room->id));
 

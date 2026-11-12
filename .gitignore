@@ -18,3 +18,9 @@ yarn-error.log
 /.idea
 /.vscode
 /.docker
+
+# Certificado público da CA local (nunca versionar chave privada)
+/caddy-root.crt
+/cardapio-ca-raiz.crt
+/docker/caddy/*.crt
+/docker/caddy/pki/

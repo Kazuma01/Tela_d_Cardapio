@@ -1,0 +1,61 @@
+# ---------------------------------------------------------------------------
+# Caddy: única porta pública da aplicação (80/443).
+#
+# - Emite certificado com a CA interna do Caddy (tls internal).
+# - cardapio.local e kazuarch.local são nomes mDNS (Avahi): continuam válidos
+#   quando o servidor muda de rede/IP. O IP atual entra como SAN secundário
+#   via CARDAPIO_IP (padrão: 192.168.100.114). Se o IP mudar, use o nome.
+# - nginx (Laravel) e reverb (WebSocket) NÃO são publicados no host; só o
+#   Caddy fala com eles pela rede interna do Docker.
+# ---------------------------------------------------------------------------
+
+{
+	# API administrativa do Caddy desligada (não expõe configuração)
+	admin off
+
+	# Navegadores não enviam SNI quando o endereço é um IP. Sem um SNI padrão
+	# o handshake falha; usamos o IP atual como padrão (o nome mDNS continua
+	# sendo o endereço recomendado).
+	default_sni {$CARDAPIO_IP:192.168.100.114}
+
+	servers {
+		# Aceita X-Forwarded-* apenas de proxies privados (rede Docker)
+		trusted_proxies static private_ranges
+		# Só HTTP/1.1 e HTTP/2: a porta 443/udp (HTTP/3) não é publicada,
+		# então não anunciamos Alt-Svc para um protocolo indisponível.
+		protocols h1 h2
+	}
+}
+
+https://cardapio.local, https://kazuarch.local, https://localhost, https://127.0.0.1, https://{$CARDAPIO_IP:192.168.100.114} {
+	tls internal
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+		-Server
+		-X-Powered-By
+	}
+
+	# WebSocket do Laravel Reverb (protocolo Pusher usa o caminho /app/*)
+	handle /app/* {
+		reverse_proxy reverb:8081
+	}
+
+	# Todo o resto vai para o nginx -> php-fpm (Laravel)
+	handle {
+		reverse_proxy nginx:80 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+}
+
+# HTTP só redireciona para HTTPS. Nenhuma aplicação é servida em claro.
+http://cardapio.local, http://kazuarch.local, http://localhost, http://127.0.0.1, http://{$CARDAPIO_IP:192.168.100.114} {
+	redir https://{host}{uri} 308
+}

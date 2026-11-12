@@ -61,6 +61,19 @@
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
+
+                        <!-- Encerra também as sessões abertas em outros aparelhos -->
+                        <form method="POST" action="{{ route('logout.all') }}">
+                            @csrf
+
+                            <x-dropdown-link :href="route('logout.all')"
+                                    onclick="event.preventDefault();
+                                                if (confirm('Encerrar todas as sessões, inclusive em outros aparelhos?')) {
+                                                    this.closest('form').submit();
+                                                }">
+                                {{ __('Sair de todos os dispositivos') }}
+                            </x-dropdown-link>
+                        </form>
                     </x-slot>
                 </x-dropdown>
                 @else

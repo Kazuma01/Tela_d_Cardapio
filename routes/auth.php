@@ -57,4 +57,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
+
+    // Encerra todas as sessões do usuário em todos os dispositivos.
+    Route::post('logout-all', [AuthenticatedSessionController::class, 'destroyAll'])
+        ->name('logout.all');
 });

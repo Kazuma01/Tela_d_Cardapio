@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Room;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -30,6 +31,11 @@ class KitchenController extends Controller
     abort_unless($room->isParticipante(Auth::id()), 403, 'Você não faz parte desta sala.');
 
     $order->update(['status' => 'pronto']);
+
+    AuditLogger::log('order.ready', 'Cozinha marcou pedido como pronto', [
+        'room_id' => $room->id,
+        'order_id' => $order->id,
+    ]);
 
     event(new \App\Events\OrderStatusUpdated($order));
 

@@ -16,7 +16,7 @@ services:
             - laravel
 
     
-    # reverb (websocket)
+    # reverb (websocket) — acessível só pela rede Docker (via Caddy)
     reverb:
         build:
             context: .
@@ -25,23 +25,56 @@ services:
         working_dir: /var/www/
         volumes:
             - ./:/var/www
-        command: php artisan reverb:start --host=0.0.0.0 --port=8081 --debug
-        ports:
-            - "8081:8081"
+        command: php artisan reverb:start --host=0.0.0.0 --port=8081
         depends_on:
             - redis
         networks:
             - laravel
 
-    # nginx
+    # nginx — acessível só pela rede Docker (via Caddy)
     nginx:
         image: nginx:alpine
         restart: unless-stopped
-        ports:
-            - "8000:80"
         volumes:
             - ./:/var/www
             - ./docker/nginx/:/etc/nginx/conf.d/
+        networks:
+            - laravel
+
+    # caddy — única porta pública: 80 (redireciona) e 443 (HTTPS/WSS)
+    caddy:
+        image: caddy:2-alpine
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+            # IP atual como SAN secundário do certificado. O nome mDNS
+            # (cardapio.local) é o endereço principal e não muda com a rede.
+            CARDAPIO_IP: ${CARDAPIO_IP:-192.168.100.114}
+        volumes:
+            - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+            - caddy_data:/data
+            - caddy_config:/config
+        depends_on:
+            - nginx
+            - reverb
+        networks:
+            - laravel
+
+    # scheduler — roda tarefas agendadas (ex.: limpeza da auditoria)
+    scheduler:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+        command: php artisan schedule:work
+        depends_on:
+            - db
+            - redis
         networks:
             - laravel
 
@@ -86,3 +119,9 @@ services:
 networks:
     laravel:
         driver: bridge
+
+volumes:
+    # Persistem a CA interna e os certificados emitidos pelo Caddy.
+    # A chave privada da CA fica em caddy_data e NUNCA deve sair daqui.
+    caddy_data:
+    caddy_config:
