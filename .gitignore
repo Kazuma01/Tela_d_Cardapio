@@ -24,3 +24,4 @@ yarn-error.log
 /cardapio-ca-raiz.crt
 /docker/caddy/*.crt
 /docker/caddy/pki/
+/public/cardapio-ca-raiz.crt

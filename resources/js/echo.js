@@ -12,7 +12,8 @@ window.Echo = new Echo({
     wsHost: window.location.hostname,
     wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
     wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+    // O pusher-js não tem transporte "wss": o transporte é sempre "ws" e o
+    // forceTLS decide se usa ws:// ou wss://.
     forceTLS: useTls,
-    // Não permite cair para ws:// em claro quando a página é HTTPS.
-    enabledTransports: useTls ? ['wss'] : ['ws'],
+    enabledTransports: ['ws'],
 });

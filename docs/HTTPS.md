@@ -86,7 +86,14 @@ cd /home/kazuma/Projetos/Tela_d_Cardapio
 docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt /home/kazuma/Downloads/cardapio-ca-raiz.crt
 ```
 
-> Se o volume `caddy_data` for apagado, a CA muda. Todos os dispositivos precisam instalar o novo certificado.
+O mesmo arquivo também fica disponível para os dispositivos baixarem direto:
+
+| Link | Observação |
+|---|---|
+| `http://192.168.100.114/cardapio-ca-raiz.crt` | **Recomendado para novos dispositivos** (HTTP sem aviso de certificado) |
+| `https://192.168.100.114/cardapio-ca-raiz.crt` | Funciona depois de confiar na CA; antes disso o navegador mostra aviso (aceite para baixar) |
+
+> Se o volume `caddy_data` for apagado, a CA muda. Todos os dispositivos precisam instalar o novo certificado — baixe sempre pelo link acima.
 
 ## 5. Instalação da CA nos dispositivos
 

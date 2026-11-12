@@ -55,7 +55,15 @@ https://cardapio.local, https://kazuarch.local, https://localhost, https://127.0
 	}
 }
 
-# HTTP só redireciona para HTTPS. Nenhuma aplicação é servida em claro.
+# HTTP só redireciona para HTTPS — exceto o download do certificado público
+# da CA, que precisa funcionar ANTES de o dispositivo confiar nela.
 http://cardapio.local, http://kazuarch.local, http://localhost, http://127.0.0.1, http://{$CARDAPIO_IP:192.168.100.114} {
-	redir https://{host}{uri} 308
+	@certificado path /cardapio-ca-raiz.crt
+	handle @certificado {
+		reverse_proxy nginx:80
+	}
+
+	handle {
+		redir https://{host}{uri} 308
+	}
 }

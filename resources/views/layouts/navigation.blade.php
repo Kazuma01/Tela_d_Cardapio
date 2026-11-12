@@ -51,6 +51,11 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        <!-- Certificado da CA para configurar um dispositivo novo -->
+                        <x-dropdown-link href="{{ url('/cardapio-ca-raiz.crt') }}" download>
+                            {{ __('Baixar certificado (novo dispositivo)') }}
+                        </x-dropdown-link>
+
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -132,6 +137,11 @@
                 <div class="mt-3 space-y-1">
                     <x-responsive-nav-link :href="route('profile.edit')">
                         {{ __('Perfil') }}
+                    </x-responsive-nav-link>
+
+                    <!-- Certificado da CA para configurar um dispositivo novo -->
+                    <x-responsive-nav-link href="{{ url('/cardapio-ca-raiz.crt') }}" download>
+                        {{ __('Baixar certificado (novo dispositivo)') }}
                     </x-responsive-nav-link>
 
                     <!-- Authentication -->

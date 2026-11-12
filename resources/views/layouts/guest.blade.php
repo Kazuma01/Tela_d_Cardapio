@@ -21,6 +21,16 @@
             <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white dark:bg-gray-800 shadow-md overflow-hidden sm:rounded-lg">
                 {{ $slot }}
             </div>
+
+            <!-- Certificado da CA: um aparelho novo precisa instalar antes de confiar no site -->
+            <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                Novo dispositivo?
+                <a href="{{ url('/cardapio-ca-raiz.crt') }}" download
+                    class="underline hover:text-gray-700 dark:hover:text-gray-300">
+                    Baixar certificado
+                </a>
+                e instalar como “Certificado de CA” (guia: docs/HTTPS.md).
+            </p>
         </div>
     </body>
 </html>
